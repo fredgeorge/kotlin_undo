@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import java.lang.IllegalStateException
 import kotlin.test.assertFailsWith
+import command.StatefulCommand as StatefulCommand
 
 internal class ExecuteOnceTest {
     private lateinit var command: StatefulTestCommand
@@ -73,79 +74,28 @@ internal class ExecuteOnceTest {
         assertEquals(expectedSuspendCount, command.suspendCount)
     }
 
-    private class StatefulTestCommand(private val executeAction: () -> Boolean?): Undoable {
+    private class StatefulTestCommand(private val executeResult: () -> Boolean?): Undoable {
         internal var executeCount = 0
         internal var abortCount = 0
         internal var undoCount = 0
         internal var suspendCount = 0
 
-        private var state: ExecutionState = Ready()
+        private val command = StatefulCommand(
+                { this.executeAction() },
+                { this.undoAction() },
+                { this.resumeAction() }
+        )
 
-        override fun execute() = state.execute()
+        override fun execute() = command.execute()
+        override fun undo() = command.undo()
+        override fun resume() = command.resume()
 
-        override fun undo() = state.undo()
+        private fun executeAction(): Boolean? = executeResult.invoke()?.also { result ->
+            if (result) executeCount++ else abortCount++
+        } ?: null.also { suspendCount++ }
 
-        override fun resume() = state.resume()
+        private fun undoAction() = true.also { undoCount++ }
 
-        private interface ExecutionState: Undoable
-
-        private inner class Ready: ExecutionState {
-
-            override fun execute() = executeAction()?.also { result ->
-                state = if (result) {
-                    executeCount++
-                    Success()
-                } else {
-                    abortCount++
-                    Failure()
-                }
-            } ?: null.also {
-                suspendCount++
-                state = Suspended()
-            }
-
-            override fun undo() = true  // Ignore
-
-            override fun resume(): Boolean? { throw IllegalStateException("Trying to resume when not suspended") }
-
-        }
-
-        private inner class Success: ExecutionState {
-
-            override fun execute() = true  // Idempotent response
-
-            override fun undo(): Boolean {
-                undoCount += 1
-                state = Ready()
-                return true            // If undo unsuccessful, consider moving to Failure state
-            }
-
-            override fun resume(): Boolean? { throw IllegalStateException("Trying to resume when not suspended") }
-        }
-
-        private inner class Suspended: ExecutionState {
-
-            override fun execute() = resume()  // States can allow this to be re-interpreted as resume
-
-            override fun resume(): Boolean? {
-                executeCount++
-                return true
-            }
-
-            override fun undo(): Boolean {
-                abortCount += 1
-                undoCount += 1
-                return true
-            }
-        }
-
-        private class Failure: ExecutionState {
-
-            override fun execute(): Boolean? { throw IllegalStateException("Command has already failed") }
-
-            override fun undo(): Boolean { throw IllegalStateException("Command has already failed") }
-
-            override fun resume(): Boolean? { throw IllegalStateException("Command has already failed") }
-        }
+        private fun resumeAction() = true.also { executeCount++ }
     }
 }
