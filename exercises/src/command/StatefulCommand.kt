@@ -1,30 +1,25 @@
 package command
 
-import java.lang.IllegalStateException
-import kotlin.reflect.KFunction1
-
-class StatefulCommand <T>(
-        private val executeAction: KFunction1<T, Boolean?>,
-        private val undoAction: KFunction1<T, Boolean>,
-        private val resumeAction: KFunction1<T, Boolean?> = executeAction
-): Undoable<T> {
+class StatefulCommand (private val behavior: Undoable.Behavior): Undoable {
 
     private var state: ExecutionState = Ready()
 
-    override fun execute(t: T) = state.execute { executeAction(t) }
+    override fun execute() = state.execute { behavior.executeAction() }
 
-    override fun undo(t: T) = state.undo { undoAction(t) }
+    override fun undo() = state.undo { behavior.undoAction() }
 
-    override fun resume(t: T) = state.resume { resumeAction(t) }
+    override fun resume() = state.resume { behavior.resumeAction() }
 
     private fun process(sideEffect: () -> Boolean?) = sideEffect()?.also { result ->
         state = if (result) Success() else Failure()
+        behavior.cleanupAction()
     } ?: null.also {
         state = Suspended()
     }
 
     private fun reverse(sideEffect: () -> Boolean) = sideEffect().also { result ->
         state = if (result) Ready() else Failure()
+        behavior.cleanupAction()
     }
 
     private interface ExecutionState {
@@ -71,6 +66,7 @@ class StatefulCommand <T>(
         override fun undo(sideEffect: () -> Boolean) = sideEffect().also { result ->
             if (!result) throw IllegalStateException("Command unable to recover from failure")
             state = Ready()
+            behavior.cleanupAction()
         }
 
         override fun resume(sideEffect: () -> Boolean?): Boolean? {
