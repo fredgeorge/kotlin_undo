@@ -50,7 +50,7 @@ internal class ExecuteOnceTest {
     }
 
     @Test
-    fun `a failed command will refuse to do anything`() {
+    fun `a failed command will refuse to do anything except recover`() {
         command = StatefulTestCommand { false }
         assertCounts(0, 0, 0, 0)
 
@@ -59,7 +59,8 @@ internal class ExecuteOnceTest {
 
         assertFailsWith<IllegalStateException> { command.execute(command) }
         assertFailsWith<IllegalStateException> { command.resume(command) }
-        assertFailsWith<IllegalStateException> { command.undo(command) }
+        assertTrue(command.undo(command))
+        assertCounts(0, 1, 1)
     }
 
     private fun assertCounts(
