@@ -1,7 +1,7 @@
 package command
 
-interface Undoable {
-    fun execute(): Boolean?  // Null indicates suspended execution
-    fun undo(): Boolean
-    fun resume() = execute()
+interface Undoable<T> {
+    fun execute(t: T): Boolean?  // Null indicates suspended execution
+    fun undo(t: T): Boolean
+    fun resume(t: T) = execute(t)
 }

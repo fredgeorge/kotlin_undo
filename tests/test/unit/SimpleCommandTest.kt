@@ -12,10 +12,10 @@ internal class SimpleCommandTest {
         command = SimpleTestCommand { true }
         assertCounts(0, 0, 0, 0)
 
-        assertEquals(true, command.execute())
+        assertEquals(true, command.execute(command))
         assertCounts(1, 0)
 
-        assertTrue(command.undo())
+        assertTrue(command.undo(command))
         assertCounts(1, 1)
     }
 
@@ -24,7 +24,7 @@ internal class SimpleCommandTest {
         command = SimpleTestCommand { false }
         assertCounts(0, 0, 0, 0)
 
-        assertEquals(false, command.execute())
+        assertEquals(false, command.execute(command))
         assertCounts(0, 0, 1)
     }
 
@@ -33,10 +33,10 @@ internal class SimpleCommandTest {
         command = SimpleTestCommand { null }
         assertCounts(0, 0, 0, 0)
 
-        assertNull(command.execute())
+        assertNull(command.execute(command))
         assertCounts(expectedSuspendCount = 1)
 
-        assertEquals(true, command.resume())
+        assertEquals(true, command.resume(command))
         assertCounts(1, 0, 0, 1)
     }
 
@@ -52,23 +52,23 @@ internal class SimpleCommandTest {
         assertEquals(expectedSuspendCount, command.suspendCount)
     }
 
-    private class SimpleTestCommand(private val executeAction: () -> Boolean?): Undoable {
+    private class SimpleTestCommand(private val executeAction: () -> Boolean?): Undoable<SimpleTestCommand> {
         internal var executeCount = 0
         internal var abortCount = 0
         internal var undoCount = 0
         internal var suspendCount = 0
 
-        override fun execute() = executeAction()?.also { result ->
+        override fun execute(t: SimpleTestCommand) = executeAction()?.also { result ->
             if (result) executeCount++
             else abortCount++
         } ?: null.also{ suspendCount ++ }
 
-        override fun undo(): Boolean {
+        override fun undo(t: SimpleTestCommand): Boolean {
             undoCount += 1
             return true
         }
 
-        override fun resume(): Boolean? {
+        override fun resume(t: SimpleTestCommand): Boolean? {
             executeCount++
             return true
         }

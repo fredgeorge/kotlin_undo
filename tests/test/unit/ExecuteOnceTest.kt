@@ -15,13 +15,13 @@ internal class ExecuteOnceTest {
         command = StatefulTestCommand { true }
         assertCounts(0, 0, 0, 0)
 
-        assertEquals(true, command.execute())
+        assertEquals(true, command.execute(command))
         assertCounts(1, 0)
 
-        assertTrue(command.undo())
+        assertTrue(command.undo(command))
         assertCounts(1, 1)
 
-        assertEquals(true, command.execute())
+        assertEquals(true, command.execute(command))
         assertCounts(2, 1)
     }
 
@@ -30,10 +30,10 @@ internal class ExecuteOnceTest {
         command = StatefulTestCommand { true }
         assertCounts(0, 0, 0, 0)
 
-        assertEquals(true, command.execute())
+        assertEquals(true, command.execute(command))
         assertCounts(1, 0)
 
-        assertEquals(true, command.execute())
+        assertEquals(true, command.execute(command))
         assertCounts(1, 0)
     }
 
@@ -42,10 +42,10 @@ internal class ExecuteOnceTest {
         command = StatefulTestCommand { null }
         assertCounts(0, 0, 0, 0)
 
-        assertNull(command.execute())
+        assertNull(command.execute(command))
         assertCounts(0, 0, 0, 1)
 
-        assertEquals(true, command.resume())
+        assertEquals(true, command.resume(command))
         assertCounts(1, 0, 0, 1)
     }
 
@@ -54,12 +54,12 @@ internal class ExecuteOnceTest {
         command = StatefulTestCommand { false }
         assertCounts(0, 0, 0, 0)
 
-        assertEquals(false, command.execute())
+        assertEquals(false, command.execute(command))
         assertCounts(0, 0, 1)
 
-        assertFailsWith<IllegalStateException> { command.execute() }
-        assertFailsWith<IllegalStateException> { command.resume() }
-        assertFailsWith<IllegalStateException> { command.undo() }
+        assertFailsWith<IllegalStateException> { command.execute(command) }
+        assertFailsWith<IllegalStateException> { command.resume(command) }
+        assertFailsWith<IllegalStateException> { command.undo(command) }
     }
 
     private fun assertCounts(
@@ -74,28 +74,23 @@ internal class ExecuteOnceTest {
         assertEquals(expectedSuspendCount, command.suspendCount)
     }
 
-    private class StatefulTestCommand(private val executeResult: () -> Boolean?): Undoable {
+    private class StatefulTestCommand(private val executeResult: () -> Boolean?):
+            Undoable<StatefulTestCommand> by StatefulCommand(
+                    StatefulTestCommand::executeAction,
+                    StatefulTestCommand::undoAction,
+                    StatefulTestCommand::resumeAction
+            ) {
         internal var executeCount = 0
         internal var abortCount = 0
         internal var undoCount = 0
         internal var suspendCount = 0
-
-        private val command = StatefulCommand(
-                { this.executeAction() },
-                { this.undoAction() },
-                { this.resumeAction() }
-        )
-
-        override fun execute() = command.execute()
-        override fun undo() = command.undo()
-        override fun resume() = command.resume()
-
-        private fun executeAction(): Boolean? = executeResult.invoke()?.also { result ->
+        
+        internal fun executeAction(): Boolean? = executeResult.invoke()?.also { result ->
             if (result) executeCount++ else abortCount++
         } ?: null.also { suspendCount++ }
 
-        private fun undoAction() = true.also { undoCount++ }
+        internal fun undoAction() = true.also { undoCount++ }
 
-        private fun resumeAction() = true.also { executeCount++ }
+        internal fun resumeAction() = true.also { executeCount++ }
     }
 }
