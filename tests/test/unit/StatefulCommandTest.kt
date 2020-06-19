@@ -3,6 +3,7 @@ package unit
 import command.StatefulCommand
 import command.Undoable
 import org.junit.jupiter.api.Assertions
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 import kotlin.test.assertFailsWith
 
@@ -15,13 +16,13 @@ internal class StatefulCommandTest {
         command = TestBehavior { true }.command()
         assertCounts(0, 0, 0, 0)
 
-        Assertions.assertEquals(true, command.execute())
+        assertEquals(true, command.execute())
         assertCounts(1, 0)
 
         Assertions.assertTrue(command.undo())
         assertCounts(1, 1)
 
-        Assertions.assertEquals(true, command.execute())
+        assertEquals(true, command.execute())
         assertCounts(2, 1)
     }
 
@@ -30,10 +31,10 @@ internal class StatefulCommandTest {
         command = TestBehavior { true }.command()
         assertCounts(0, 0, 0, 0)
 
-        Assertions.assertEquals(true, command.execute())
+        assertEquals(true, command.execute())
         assertCounts(1, 0)
 
-        Assertions.assertEquals(true, command.execute())
+        assertEquals(true, command.execute())
         assertCounts(1, 0)
     }
 
@@ -45,7 +46,7 @@ internal class StatefulCommandTest {
         Assertions.assertNull(command.execute())
         assertCounts(0, 0, 0, 1)
 
-        Assertions.assertEquals(true, command.resume())
+        assertEquals(true, command.resume())
         assertCounts(1, 0, 0, 1)
     }
 
@@ -54,7 +55,7 @@ internal class StatefulCommandTest {
         command = TestBehavior { false }.command()
         assertCounts(0, 0, 0, 0)
 
-        Assertions.assertEquals(false, command.execute())
+        assertEquals(false, command.execute())
         assertCounts(0, 0, 1)
 
         assertFailsWith<IllegalStateException> { command.execute() }
@@ -63,17 +64,16 @@ internal class StatefulCommandTest {
         assertCounts(0, 1, 1)
     }
 
-
     private fun assertCounts(
             expectedExecuteCount: Int = 0,
             expectedUndoCount: Int = 0,
             expectedAbortCount: Int = 0,
             expectedSuspendCount: Int = 0
     ) {
-        Assertions.assertEquals(expectedExecuteCount, behavior.executeCount)
-        Assertions.assertEquals(expectedUndoCount, behavior.undoCount)
-        Assertions.assertEquals(expectedAbortCount, behavior.abortCount)
-        Assertions.assertEquals(expectedSuspendCount, behavior.suspendCount)
+        assertEquals(expectedExecuteCount, behavior.executeCount)
+        assertEquals(expectedUndoCount, behavior.undoCount)
+        assertEquals(expectedAbortCount, behavior.abortCount)
+        assertEquals(expectedSuspendCount, behavior.suspendCount)
     }
 
     private inner class TestBehavior(private val executeResult: () -> Boolean?): Undoable.Behavior {
