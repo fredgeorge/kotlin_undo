@@ -15,7 +15,7 @@ class SerialCompositeCommand(vararg steps: Undoable, private val behavior: Undoa
 
     override fun execute(): Boolean? {
         behavior.executeAction().also { result -> if (result != true) return result } // Abort early
-        return executeCurrentStep().also { behavior.cleanupAction() }
+        return executeCurrentStep().also { if (it != null) behavior.cleanupAction() }
     }
 
     // Recursive execution
@@ -64,7 +64,15 @@ class SerialCompositeCommand(vararg steps: Undoable, private val behavior: Undoa
         }
     }
 
-    override fun resume() = executeCurrentStep()
+    override fun resume(): Boolean? {
+        currentStep.resume().also { resumeResult ->
+            return when (resumeResult) {
+                true -> if (isLastStep()) true else executeCurrentStep()
+                false -> rollback()
+                else -> null  // it's suspended again
+            }.also { behavior.cleanupAction() }
+        }
+    }
 
     private object NullStep: Undoable {
         override fun execute() = true
