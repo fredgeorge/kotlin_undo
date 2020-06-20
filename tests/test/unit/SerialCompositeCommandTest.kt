@@ -168,7 +168,83 @@ internal class SerialCompositeCommandTest {
 
     @Test
     fun `3-tier composite with failing step`() {
+        val step1ASuccess = TestBehavior { true }
+        val step1BSuccess = TestBehavior { true }
+        val step2ASuccess = TestBehavior { true }
+        val step2BSuspend = TestBehavior { null }
+        val step2CSuccess = TestBehavior { true }
+        val command1 = CompositeTestBehavior().commandWithBehaviors(
+                step1ASuccess,
+                step1BSuccess
+        )
+        val command2 = CompositeTestBehavior().commandWithBehaviors(
+                step2ASuccess,
+                step2BSuspend,
+                step2CSuccess
+        )
+        command = CompositeTestBehavior().command(command1, command2)
 
+        assertNull(command.execute())
+        assertCompositeCounts(1, 0, 0)
+        assertStepCounts(
+                stepBehavior = step1ASuccess,
+                expectedExecuteCount = 1,
+                expectedSuccessCount = 1,
+                expectedCleanupCount = 1
+        )
+        assertStepCounts(
+                stepBehavior = step1BSuccess,
+                expectedExecuteCount = 1,
+                expectedSuccessCount = 1,
+                expectedCleanupCount = 1
+        )
+        assertStepCounts(
+                stepBehavior = step2ASuccess,
+                expectedExecuteCount = 1,
+                expectedSuccessCount = 1,
+                expectedCleanupCount = 1
+        )
+        assertStepCounts(
+                stepBehavior = step2BSuspend,
+                expectedExecuteCount = 1,
+                expectedSuspendCount = 1
+        )
+        assertStepCounts(step2CSuccess)
+
+        assertEquals(true, command.resume())
+        assertCompositeCounts(1, 0, 1)
+        assertStepCounts(
+                stepBehavior = step1ASuccess,
+                expectedExecuteCount = 1,
+                expectedSuccessCount = 1,
+                expectedCleanupCount = 1
+        )
+        assertStepCounts(
+                stepBehavior = step1BSuccess,
+                expectedExecuteCount = 1,
+                expectedSuccessCount = 1,
+                expectedCleanupCount = 1
+        )
+        assertStepCounts(
+                stepBehavior = step2ASuccess,
+                expectedExecuteCount = 1,
+                expectedSuccessCount = 1,
+                expectedCleanupCount = 1
+        )
+        assertStepCounts(
+                stepBehavior = step2BSuspend,
+                expectedExecuteCount = 1,
+                expectedSuccessCount = 1,
+                expectedSuspendCount = 1,
+                expectedResumeCount = 1,
+                expectedCleanupCount = 1
+        )
+        assertStepCounts(
+                stepBehavior = step2CSuccess,
+                expectedExecuteCount = 1,
+                expectedSuccessCount = 1,
+                expectedCleanupCount = 1
+        )
     }
 
     private fun assertCompositeCounts(
@@ -205,12 +281,12 @@ internal class SerialCompositeCommandTest {
         internal var undoCount = 0
         internal var cleanupCount = 0
 
-        internal fun command(vararg steps: Undoable): Undoable {
+        internal fun command(vararg steps: Undoable): SerialCompositeCommand {
             compositeBehavior = this
             return SerialCompositeCommand(*steps, behavior = compositeBehavior)
         }
 
-        internal fun commandWithBehaviors(vararg behaviors: TestBehavior): Undoable =
+        internal fun commandWithBehaviors(vararg behaviors: TestBehavior): SerialCompositeCommand =
                 command(*(behaviors.map { it.command() }.toTypedArray()))
 
         override fun executeAction() = true.also { executeCount++ }
