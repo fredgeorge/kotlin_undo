@@ -64,6 +64,16 @@ internal class StatefulCommandTest {
         assertCounts(0, 1, 1)
     }
 
+    @Test
+    fun `can undo a completed SerialCompositeCommand`() {
+
+    }
+
+    @Test
+    fun `can resume a suspended sub-command`() {
+
+    }
+
     private fun assertCounts(
             expectedExecuteCount: Int = 0,
             expectedUndoCount: Int = 0,
