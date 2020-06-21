@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2020 by Fred George
+ * MIT License - see LICENSE file
+ * @author Fred George  fredgeorge@acm.org
+ */
+
 package unit
 
 import command.Undoable
@@ -57,6 +63,7 @@ internal class SimpleCommandTest {
         internal var abortCount = 0
         internal var undoCount = 0
         internal var suspendCount = 0
+        override val identifier = "SimpleTestCommand in ${this.javaClass.simpleName}"
 
         override fun execute() = executeAction()?.also { result ->
             if (result) executeCount++

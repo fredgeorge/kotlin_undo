@@ -1,6 +1,15 @@
+/*
+ * Copyright (c) 2020 by Fred George
+ * MIT License - see LICENSE file
+ * @author Fred George  fredgeorge@acm.org
+ */
+
 package command
 
-class StatefulCommand (private val behavior: Undoable.Behavior): Undoable {
+class StatefulCommand (
+        private val behavior: Undoable.Behavior,
+        override val identifier: Any = "<unidentified StatefulCommand>"
+): Undoable {
 
     private var state: ExecutionState = Ready()
 

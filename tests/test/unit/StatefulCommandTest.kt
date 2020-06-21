@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2020 by Fred George
+ * MIT License - see LICENSE file
+ * @author Fred George  fredgeorge@acm.org
+ */
+
 package unit
 
 import command.StatefulCommand

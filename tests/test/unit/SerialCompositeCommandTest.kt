@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2020 by Fred George
+ * MIT License - see LICENSE file
+ * @author Fred George  fredgeorge@acm.org
+ */
+
 package unit
 
 import command.SerialCompositeCommand
@@ -52,9 +58,9 @@ internal class SerialCompositeCommandTest {
     fun `SerialComposite with second step failing`() {
         val successfulStep = TestBehavior { true }
         val failingStep = TestBehavior { false }
-        command = CompositeTestBehavior().commandWithBehaviors(
-                successfulStep,
-                failingStep
+        command = CompositeTestBehavior().command(
+                successfulStep.command("successfulStep"),
+                failingStep.command("failingStep")
         )
 
         assertEquals(false, command.execute())
@@ -78,9 +84,9 @@ internal class SerialCompositeCommandTest {
     fun `can undo a completed SerialCompositeCommand`() {
         val step1Success = TestBehavior { true }
         val step2Success = TestBehavior { true }
-        command = CompositeTestBehavior().commandWithBehaviors(
-                step1Success,
-                step2Success
+        command = CompositeTestBehavior().command(
+                step1Success.command("step1Success"),
+                step2Success.command("step2Success")
         )
 
         assertEquals(true, command.execute())
@@ -121,10 +127,10 @@ internal class SerialCompositeCommandTest {
         val step1Success = TestBehavior { true }
         val step2Suspend = TestBehavior { null }
         val step3Success = TestBehavior { true }
-        command = CompositeTestBehavior().commandWithBehaviors(
-                step1Success,
-                step2Suspend,
-                step3Success
+        command = CompositeTestBehavior().command(
+                step1Success.command("step1Success"),
+                step2Suspend.command("step2Suspend"),
+                step3Success.command("step3Success")
         )
 
         assertNull(command.execute())
@@ -173,16 +179,18 @@ internal class SerialCompositeCommandTest {
         val step2ASuccess = TestBehavior { true }
         val step2BSuspend = TestBehavior { null }
         val step2CSuccess = TestBehavior { true }
-        val command1 = CompositeTestBehavior().commandWithBehaviors(
-                step1ASuccess,
-                step1BSuccess
+        val command1 = CompositeTestBehavior().command(
+                step1ASuccess.command("step1ASuccess"),
+                step1BSuccess.command("step1BSuccess"),
+                label = "SubCommand 1"
         )
-        val command2 = CompositeTestBehavior().commandWithBehaviors(
-                step2ASuccess,
-                step2BSuspend,
-                step2CSuccess
+        val command2 = CompositeTestBehavior().command(
+                step2ASuccess.command("step2ASuccess"),
+                step2BSuspend.command("step2BSuspend"),
+                step2CSuccess.command("step2CSuccess"),
+                label = "SubCommand 2"
         )
-        command = CompositeTestBehavior().command(command1, command2)
+        command = CompositeTestBehavior().command(command1, command2, label = "Main Command")
 
         assertNull(command.execute())
         assertCompositeCounts(1, 0, 0)
@@ -281,9 +289,13 @@ internal class SerialCompositeCommandTest {
         internal var undoCount = 0
         internal var cleanupCount = 0
 
-        internal fun command(vararg steps: Undoable): SerialCompositeCommand {
+        internal fun command(vararg steps: Undoable, label: String = "<unknown step>"): SerialCompositeCommand {
             compositeBehavior = this
-            return SerialCompositeCommand(*steps, behavior = compositeBehavior)
+            return SerialCompositeCommand(
+                    *steps,
+                    behavior = compositeBehavior,
+                    identifier = label
+            )
         }
 
         internal fun commandWithBehaviors(vararg behaviors: TestBehavior): SerialCompositeCommand =
@@ -307,7 +319,7 @@ internal class SerialCompositeCommandTest {
         internal var resumeCount = 0
         internal var cleanupCount = 0
 
-        internal fun command() = StatefulCommand(this)
+        internal fun command(label: String = "<unknown step>") = StatefulCommand(this, identifier = label)
 
         override fun executeAction(): Boolean? = executeResult.invoke()?.also { result ->
             executeCount++

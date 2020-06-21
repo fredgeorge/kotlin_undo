@@ -1,6 +1,16 @@
+/*
+ * Copyright (c) 2020 by Fred George
+ * MIT License - see LICENSE file
+ * @author Fred George  fredgeorge@acm.org
+ */
+
 package command
 
-class SerialCompositeCommand(vararg steps: Undoable, private val behavior: Undoable.Behavior): Undoable {
+class SerialCompositeCommand(
+        vararg steps: Undoable,
+        private val behavior: Undoable.Behavior,
+        override val identifier: Any = "<unidentified SerialCompositeCommand>"
+): Undoable {
     private val steps: List<Undoable>
     private var currentStep: Undoable
     private val nextSteps: Map<Undoable, Undoable>
@@ -78,5 +88,6 @@ class SerialCompositeCommand(vararg steps: Undoable, private val behavior: Undoa
         override fun execute() = true
         override fun undo() = true
         override fun resume() = true
+        override val identifier = "<no steps>"
     }
 }
