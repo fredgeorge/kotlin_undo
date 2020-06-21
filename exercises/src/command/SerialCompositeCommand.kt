@@ -28,6 +28,31 @@ class SerialCompositeCommand(
         return executeCurrentStep().also { if (it != null) behavior.cleanupAction() }
     }
 
+    override fun undo(): Boolean {
+        behavior.undoAction().also { result -> if (!result) return false }
+        currentStep = steps.lastOrNull() ?: NullStep
+        return undoCurrentStep().also { behavior.cleanupAction() }
+    }
+
+    override fun resume(): Boolean? {
+        currentStep.resume().also { resumeResult ->
+            return when (resumeResult) {
+                true -> if (isLastStep()) true else executeCurrentStep()
+                false -> rollback()
+                else -> null  // it's suspended again
+            }.also { behavior.cleanupAction() }
+        }
+    }
+
+    override fun accept(visitor: CommandVisitor) {
+        visitor.preVisit(this)
+        behavior.accept(visitor)
+        steps.filterNot { it is NullStep }.forEach { it.accept(visitor) }
+        visitor.postVisit(this)
+    }
+
+    override fun toString() = CommandPrettyPrint(this).result()
+
     // Recursive execution
     private fun executeCurrentStep(): Boolean? {
         currentStep.execute().also { executeResult ->
@@ -60,12 +85,6 @@ class SerialCompositeCommand(
         }
     }
 
-    override fun undo(): Boolean {
-        behavior.undoAction().also { result -> if (!result) return false }
-        currentStep = steps.lastOrNull() ?: NullStep
-        return undoCurrentStep().also { behavior.cleanupAction() }
-    }
-
     // Recursive undo
     private fun undoCurrentStep(): Boolean {
         currentStep.undo().also { undoResult ->
@@ -74,20 +93,11 @@ class SerialCompositeCommand(
         }
     }
 
-    override fun resume(): Boolean? {
-        currentStep.resume().also { resumeResult ->
-            return when (resumeResult) {
-                true -> if (isLastStep()) true else executeCurrentStep()
-                false -> rollback()
-                else -> null  // it's suspended again
-            }.also { behavior.cleanupAction() }
-        }
-    }
-
     private object NullStep: Undoable {
         override fun execute() = true
         override fun undo() = true
         override fun resume() = true
+        override fun accept(visitor: CommandVisitor) {} // Ignore
         override val identifier = "<no steps>"
     }
 }

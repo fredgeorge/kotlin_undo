@@ -6,6 +6,7 @@
 
 package unit
 
+import command.CommandVisitor
 import command.StatefulCommand
 import command.Undoable
 import org.junit.jupiter.api.Assertions
@@ -100,5 +101,7 @@ internal class StatefulCommandTest {
         override fun undoAction() = true.also { undoCount++ }
 
         override fun resumeAction() = true.also { executeCount++ }
+
+        override fun accept(visitor: CommandVisitor) = visitor.visit(this)
     }
 }

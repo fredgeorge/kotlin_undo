@@ -6,6 +6,7 @@
 
 package unit
 
+import command.CommandVisitor
 import command.Undoable
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
@@ -79,5 +80,7 @@ internal class SimpleCommandTest {
             executeCount++
             return true
         }
+
+        override fun accept(visitor: CommandVisitor) {}     // Ignore
     }
 }

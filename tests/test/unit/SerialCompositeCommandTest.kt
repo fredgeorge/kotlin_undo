@@ -6,6 +6,7 @@
 
 package unit
 
+import command.CommandVisitor
 import command.SerialCompositeCommand
 import command.StatefulCommand
 import command.Undoable
@@ -308,6 +309,14 @@ internal class SerialCompositeCommandTest {
         override fun resumeAction() = true.also { executeCount++ }
 
         override fun cleanupAction()  { cleanupCount++ }
+
+        override fun accept(visitor: CommandVisitor) = visitor.visit(this)
+
+        override fun toString() =
+                listOf(::executeCount, ::undoCount, ::cleanupCount)
+                        .filterNot { it.get() == 0 }
+                        .map { "${it.name} = ${it.get()}" }
+                        .joinToString()
     }
 
     private inner class TestBehavior(private val executeResult: () -> Boolean?): Undoable.Behavior {
@@ -331,5 +340,13 @@ internal class SerialCompositeCommandTest {
         override fun resumeAction() = true.also { resumeCount++; successCount++ }
 
         override fun cleanupAction() { cleanupCount++ }
+
+        override fun accept(visitor: CommandVisitor) = visitor.visit(this)
+
+        override fun toString() =
+                listOf(::executeCount, ::successCount, ::abortCount, ::undoCount, ::suspendCount, ::resumeCount, ::cleanupCount)
+                        .filterNot { it.get() == 0 }
+                        .map { "${it.name} = ${it.get()}" }
+                        .joinToString()
     }
 }

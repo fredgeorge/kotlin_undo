@@ -10,6 +10,7 @@ interface Undoable {
     fun execute(): Boolean?
     fun undo(): Boolean
     fun resume(): Boolean?
+    fun accept(visitor: CommandVisitor)
     val identifier: Any  // Used for tracing
 
     interface Behavior {
@@ -17,6 +18,7 @@ interface Undoable {
         fun undoAction(): Boolean
         fun resumeAction(): Boolean? = executeAction()
         fun cleanupAction() {}
+        fun accept(visitor: CommandVisitor) {}
     }
 }
 

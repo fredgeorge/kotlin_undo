@@ -19,6 +19,14 @@ class StatefulCommand (
 
     override fun resume() = state.resume { behavior.resumeAction() }
 
+    override fun accept(visitor: CommandVisitor) {
+        visitor.preVisit(this)
+        behavior.accept(visitor)
+        visitor.postVisit(this)
+    }
+
+    override fun toString() = CommandPrettyPrint(this).result()
+
     private fun process(sideEffect: () -> Boolean?) = sideEffect()?.also { result ->
         state = if (result) Success() else Failure()
         behavior.cleanupAction()
