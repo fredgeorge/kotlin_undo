@@ -8,7 +8,7 @@ package command
 
 class SerialCompositeCommand(
         vararg steps: Undoable,
-        private val behavior: Undoable.Behavior,
+        private var behavior: Undoable.Behavior,
         override val identifier: Any = "<unidentified SerialCompositeCommand>"
 ): Undoable {
     private val steps: List<Undoable>
@@ -45,13 +45,19 @@ class SerialCompositeCommand(
     }
 
     override fun accept(visitor: CommandVisitor) {
-        visitor.preVisit(this)
+        visitor.preVisit(this, behavior)
         behavior.accept(visitor)
         steps.filterNot { it is NullStep }.forEach { it.accept(visitor) }
-        visitor.postVisit(this)
+        visitor.postVisit(this, behavior)
+    }
+
+    override fun inject(behavior: Undoable.Behavior) {
+        this.behavior = behavior
     }
 
     override fun toString() = CommandPrettyPrint(this).result()
+
+    fun trace() = ActionTracer(this)
 
     // Recursive execution
     private fun executeCurrentStep(): Boolean? {

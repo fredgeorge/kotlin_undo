@@ -7,11 +7,7 @@
 package command
 
 interface CommandVisitor {
-    fun preVisit(command: SerialCompositeCommand) {}
-    fun preVisit(command: StatefulCommand) {}
-    fun preVisit(command: Undoable) {}
+    fun preVisit(command: Undoable, behavior: Undoable.Behavior? = null) {}
     fun visit(behavior: Undoable.Behavior) {}
-    fun postVisit(command: Undoable) {}
-    fun postVisit(command: StatefulCommand) {}
-    fun postVisit(command: SerialCompositeCommand) {}
+    fun postVisit(command: Undoable, behavior: Undoable.Behavior? = null) {}
 }

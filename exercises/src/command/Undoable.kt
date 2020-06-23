@@ -11,7 +11,8 @@ interface Undoable {
     fun undo(): Boolean
     fun resume(): Boolean?
     fun accept(visitor: CommandVisitor)
-    val identifier: Any  // Used for tracing
+    fun inject(behavior: Behavior) {}   // Ignore by default
+    val identifier: Any  // Used for debugging
 
     interface Behavior {
         fun executeAction(): Boolean?
@@ -19,6 +20,10 @@ interface Undoable {
         fun resumeAction(): Boolean? = executeAction()
         fun cleanupAction() {}
         fun accept(visitor: CommandVisitor) {}
+    }
+
+    interface Trace: Behavior {
+        override fun accept(visitor: CommandVisitor) { }
     }
 }
 

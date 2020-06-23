@@ -9,15 +9,7 @@ internal class CommandPrettyPrint(command: Undoable): CommandVisitor {
 
     internal fun result() = result + "\n"
 
-    override fun preVisit(command: SerialCompositeCommand) {
-        captureIdentifier(command)
-    }
-
-    override fun preVisit(command: StatefulCommand) {
-        captureIdentifier(command)
-    }
-
-    override fun preVisit(command: Undoable) {
+    override fun preVisit(command: Undoable, behavior: Undoable.Behavior?) {
         captureIdentifier(command)
     }
 
@@ -25,15 +17,7 @@ internal class CommandPrettyPrint(command: Undoable): CommandVisitor {
         result += "  ".repeat(indentCount + 1) + "behavior: " + behavior.toString() + "\n"
     }
 
-    override fun postVisit(command: Undoable) {
-        indentCount--
-    }
-
-    override fun postVisit(command: StatefulCommand) {
-        indentCount--
-    }
-
-    override fun postVisit(command: SerialCompositeCommand) {
+    override fun postVisit(command: Undoable, behavior: Undoable.Behavior?) {
         indentCount--
     }
 

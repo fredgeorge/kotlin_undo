@@ -7,7 +7,7 @@
 package command
 
 class StatefulCommand (
-        private val behavior: Undoable.Behavior,
+        private var behavior: Undoable.Behavior,
         override val identifier: Any = "<unidentified StatefulCommand>"
 ): Undoable {
 
@@ -20,9 +20,13 @@ class StatefulCommand (
     override fun resume() = state.resume { behavior.resumeAction() }
 
     override fun accept(visitor: CommandVisitor) {
-        visitor.preVisit(this)
+        visitor.preVisit(this, behavior)
         behavior.accept(visitor)
-        visitor.postVisit(this)
+        visitor.postVisit(this, behavior)
+    }
+
+    override fun inject(behavior: Undoable.Behavior) {
+        this.behavior = behavior
     }
 
     override fun toString() = CommandPrettyPrint(this).result()

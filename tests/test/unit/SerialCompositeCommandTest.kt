@@ -6,16 +6,14 @@
 
 package unit
 
-import command.CommandVisitor
-import command.SerialCompositeCommand
-import command.StatefulCommand
-import command.Undoable
+import command.*
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 internal class SerialCompositeCommandTest {
     private lateinit var compositeBehavior: CompositeTestBehavior
     private lateinit var command: Undoable
+    private lateinit var trace: ActionTracer
 
     @Test
     fun `empty Composite behaves correctly`() {
@@ -192,6 +190,7 @@ internal class SerialCompositeCommandTest {
                 label = "SubCommand 2"
         )
         command = CompositeTestBehavior().command(command1, command2, label = "Main Command")
+                .also { trace = it.trace() }
 
         assertNull(command.execute())
         assertCompositeCounts(1, 0, 0)
@@ -254,6 +253,9 @@ internal class SerialCompositeCommandTest {
                 expectedSuccessCount = 1,
                 expectedCleanupCount = 1
         )
+
+        println(command.toString())
+        println(trace.result())
     }
 
     private fun assertCompositeCounts(
