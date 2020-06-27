@@ -258,7 +258,9 @@ internal class SerialCompositeCommandTest {
                 expectedCleanupCount = 1
         )
 
+        println("*** Pretty printing using a Visitor pattern: ***\n")
         println(command.toString())
+        println("*** Trace using a Decorator pattern: ***\n")
         println(trace.result())
     }
 
@@ -350,7 +352,15 @@ internal class SerialCompositeCommandTest {
         override fun accept(visitor: CommandVisitor<Any>) = visitor.visit(this)
 
         override fun toString() =
-                listOf(::executeCount, ::successCount, ::abortCount, ::undoCount, ::suspendCount, ::resumeCount, ::cleanupCount)
+                listOf(
+                        ::executeCount,
+                        ::successCount,
+                        ::abortCount,
+                        ::undoCount,
+                        ::suspendCount,
+                        ::resumeCount,
+                        ::cleanupCount
+                )
                         .filterNot { it.get() == 0 }
                         .map { "${it.name} = ${it.get()}" }
                         .joinToString()

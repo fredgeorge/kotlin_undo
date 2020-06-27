@@ -43,6 +43,10 @@ class ActionTracer<R>(command: Undoable<R>): CommandVisitor<R> {
             return baseBehavior.cleanupAction()
         }
 
+        override fun accept(visitor: CommandVisitor<R>) {
+            baseBehavior.accept(visitor)
+        }
+
         private fun log0(kFunction0: KFunction0<Any?>) {
             result += "${kFunction0.name} invoked for ${indentifier.toString()}\n"
         }

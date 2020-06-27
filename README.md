@@ -52,6 +52,16 @@ has a similar basic API to Undoable:
     cleanupAction()     // invoked upon completion of the above actions; not invoked if suspended
     accept(v: CommandVisitor)   // Supporting the Visitor pattern
     
+### Undoable.Composite
+
+This interface is intended for classes representing groups of Command steps. In addition to the
+base *Undoable* methods, it also has the simple list manipulators modeling the same MutableList
+behaviors including return values:
+
+    add(step: Undoable)
+    add(index: Int, step: Undoable)
+    remove(step: Undoable)
+
 ### Undoable.Trace
 
 This is simply a marker interface for tracing via the Decorator pattern. It is simply another

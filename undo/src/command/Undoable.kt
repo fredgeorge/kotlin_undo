@@ -16,6 +16,12 @@ interface Undoable<R> {
     fun inject(behavior: Behavior<R>) {}   // Ignore by default
     val identifier: Any  // Used for debugging
 
+    interface Composite<R>: Undoable<R> {
+        fun add(step: Undoable<R>): Boolean
+        fun add(index: Int, step: Undoable<R>)
+        fun remove(step: Undoable<R>): Boolean
+    }
+
     interface Behavior<R> {
         fun executeAction(): Boolean?
         fun undoAction(): Boolean

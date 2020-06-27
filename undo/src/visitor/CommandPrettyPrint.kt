@@ -11,8 +11,20 @@ internal class CommandPrettyPrint<R>(command: Undoable<R>): CommandVisitor<R> {
 
     internal fun result() = result + "\n"
 
+    override fun preVisit(
+            command: Undoable.Composite<R>,
+            steps: List<Undoable<R>>,
+            currentStep: Undoable<R>,
+            behavior: Undoable.Behavior<R>?
+    ) {
+        result += "  ".repeat(indentCount) +
+                        "${command.identifier} with ${steps.size} steps\n"
+        indentCount++
+    }
+
     override fun preVisit(command: Undoable<R>, behavior: Undoable.Behavior<R>?) {
-        captureIdentifier(command)
+        result += "  ".repeat(indentCount) + command.identifier.toString() + "\n"
+        indentCount++
     }
 
     override fun visit(behavior: Undoable.Behavior<R>) {
@@ -21,10 +33,5 @@ internal class CommandPrettyPrint<R>(command: Undoable<R>): CommandVisitor<R> {
 
     override fun postVisit(command: Undoable<R>, behavior: Undoable.Behavior<R>?) {
         indentCount--
-    }
-
-    private fun captureIdentifier(command: Undoable<R>) {
-        result += "  ".repeat(indentCount) + command.identifier.toString() + "\n"
-        indentCount++
     }
 }
