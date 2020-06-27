@@ -6,10 +6,13 @@
 
 package command
 
-class StatefulCommand (
-        private var behavior: Undoable.Behavior,
+import visitor.CommandPrettyPrint
+import visitor.CommandVisitor
+
+class StatefulCommand<R> (
+        private var behavior: Undoable.Behavior<R>,
         override val identifier: Any = "<unidentified StatefulCommand>"
-): Undoable {
+): Undoable<R> {
 
     private var state: ExecutionState = Ready()
 
@@ -17,15 +20,15 @@ class StatefulCommand (
 
     override fun undo() = state.undo { behavior.undoAction() }
 
-    override fun resume() = state.resume { behavior.resumeAction() }
+    override fun resume(r: R?) = state.resume { behavior.resumeAction(r) }
 
-    override fun accept(visitor: CommandVisitor) {
+    override fun accept(visitor: CommandVisitor<R>) {
         visitor.preVisit(this, behavior)
         behavior.accept(visitor)
         visitor.postVisit(this, behavior)
     }
 
-    override fun inject(behavior: Undoable.Behavior) {
+    override fun inject(behavior: Undoable.Behavior<R>) {
         this.behavior = behavior
     }
 

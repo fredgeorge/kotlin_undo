@@ -6,24 +6,24 @@
 
 package command
 
-interface Undoable {
+import visitor.CommandVisitor
+
+interface Undoable<R> {
     fun execute(): Boolean?
     fun undo(): Boolean
-    fun resume(): Boolean?
-    fun accept(visitor: CommandVisitor)
-    fun inject(behavior: Behavior) {}   // Ignore by default
+    fun resume(r: R? = null): Boolean?
+    fun accept(visitor: CommandVisitor<R>)
+    fun inject(behavior: Behavior<R>) {}   // Ignore by default
     val identifier: Any  // Used for debugging
 
-    interface Behavior {
+    interface Behavior<R> {
         fun executeAction(): Boolean?
         fun undoAction(): Boolean
-        fun resumeAction(): Boolean? = executeAction()
+        fun resumeAction(r: R? = null): Boolean? = executeAction()
         fun cleanupAction() {}
-        fun accept(visitor: CommandVisitor) {}
+        fun accept(visitor: CommandVisitor<R>) {}
     }
 
-    interface Trace: Behavior {
-        override fun accept(visitor: CommandVisitor) { }
-    }
+    interface Trace<R>: Behavior<R>
 }
 

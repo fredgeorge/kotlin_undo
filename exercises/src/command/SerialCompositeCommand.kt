@@ -6,19 +6,24 @@
 
 package command
 
-class SerialCompositeCommand(
-        vararg steps: Undoable,
-        private var behavior: Undoable.Behavior,
+import decorator.ActionTracer
+import visitor.CommandPrettyPrint
+import visitor.CommandVisitor
+
+class SerialCompositeCommand<R>(
+        vararg steps: Undoable<R>,
+        private var behavior: Undoable.Behavior<R>,
         override val identifier: Any = "<unidentified SerialCompositeCommand>"
-): Undoable {
-    private val steps: List<Undoable>
-    private var currentStep: Undoable
-    private val nextSteps: Map<Undoable, Undoable>
-    private val previousSteps: Map<Undoable, Undoable>
+): Undoable<R> {
+    private val steps: List<Undoable<R>>
+    private var currentStep: Undoable<R>
+    private val nextSteps: Map<Undoable<R>, Undoable<R>>
+    private val previousSteps: Map<Undoable<R>, Undoable<R>>
+    private val nullStep = NullStep<R>()
 
     init {
-        this.steps = if (steps.isEmpty()) listOf(NullStep) else steps.toList()
-        currentStep = this.steps.firstOrNull() ?: NullStep
+        this.steps = if (steps.isEmpty()) listOf(nullStep) else steps.toList()
+        currentStep = this.steps.firstOrNull() ?: nullStep
         nextSteps = this.steps.zipWithNext().toMap()  // pseudo linked list for execution
         previousSteps = this.steps.reversed().zipWithNext().toMap() // pseudo linked list for undo
     }
@@ -30,12 +35,12 @@ class SerialCompositeCommand(
 
     override fun undo(): Boolean {
         behavior.undoAction().also { result -> if (!result) return false }
-        currentStep = steps.lastOrNull() ?: NullStep
+        currentStep = steps.lastOrNull() ?: nullStep
         return undoCurrentStep().also { behavior.cleanupAction() }
     }
 
-    override fun resume(): Boolean? {
-        currentStep.resume().also { resumeResult ->
+    override fun resume(r: R?): Boolean? {
+        currentStep.resume(r).also { resumeResult ->
             return when (resumeResult) {
                 true -> if (isLastStep()) true else executeCurrentStep()
                 false -> rollback()
@@ -44,14 +49,14 @@ class SerialCompositeCommand(
         }
     }
 
-    override fun accept(visitor: CommandVisitor) {
+    override fun accept(visitor: CommandVisitor<R>) {
         visitor.preVisit(this, behavior)
         behavior.accept(visitor)
         steps.filterNot { it is NullStep }.forEach { it.accept(visitor) }
         visitor.postVisit(this, behavior)
     }
 
-    override fun inject(behavior: Undoable.Behavior) {
+    override fun inject(behavior: Undoable.Behavior<R>) {
         this.behavior = behavior
     }
 
@@ -99,11 +104,11 @@ class SerialCompositeCommand(
         }
     }
 
-    private object NullStep: Undoable {
+    private class NullStep<R>: Undoable<R> {
         override fun execute() = true
         override fun undo() = true
-        override fun resume() = true
-        override fun accept(visitor: CommandVisitor) {} // Ignore
+        override fun resume(r: R?) = true
+        override fun accept(visitor: CommandVisitor<R>) {} // Ignore
         override val identifier = "<no steps>"
     }
 }

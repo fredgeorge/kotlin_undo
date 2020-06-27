@@ -6,14 +6,18 @@
 
 package unit
 
-import command.*
+import command.SerialCompositeCommand
+import command.StatefulCommand
+import command.Undoable
+import decorator.ActionTracer
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import visitor.CommandVisitor
 
 internal class SerialCompositeCommandTest {
     private lateinit var compositeBehavior: CompositeTestBehavior
-    private lateinit var command: Undoable
-    private lateinit var trace: ActionTracer
+    private lateinit var command: Undoable<Any>
+    private lateinit var trace: ActionTracer<Any>
 
     @Test
     fun `empty Composite behaves correctly`() {
@@ -287,12 +291,12 @@ internal class SerialCompositeCommandTest {
         assertEquals(expectedCleanupCount, stepBehavior.cleanupCount, "Step cleanup count")
     }
 
-    private inner class CompositeTestBehavior : Undoable.Behavior {
+    private inner class CompositeTestBehavior : Undoable.Behavior<Any> {
         internal var executeCount = 0
         internal var undoCount = 0
         internal var cleanupCount = 0
 
-        internal fun command(vararg steps: Undoable, label: String = "<unknown step>"): SerialCompositeCommand {
+        internal fun command(vararg steps: Undoable<Any>, label: String = "<unknown step>"): SerialCompositeCommand<Any> {
             compositeBehavior = this
             return SerialCompositeCommand(
                     *steps,
@@ -301,18 +305,18 @@ internal class SerialCompositeCommandTest {
             )
         }
 
-        internal fun commandWithBehaviors(vararg behaviors: TestBehavior): SerialCompositeCommand =
+        internal fun commandWithBehaviors(vararg behaviors: TestBehavior): SerialCompositeCommand<Any> =
                 command(*(behaviors.map { it.command() }.toTypedArray()))
 
         override fun executeAction() = true.also { executeCount++ }
 
         override fun undoAction() = true.also { undoCount++ }
 
-        override fun resumeAction() = true.also { executeCount++ }
+        override fun resumeAction(r: Any?) = true.also { executeCount++ }
 
         override fun cleanupAction()  { cleanupCount++ }
 
-        override fun accept(visitor: CommandVisitor) = visitor.visit(this)
+        override fun accept(visitor: CommandVisitor<Any>) = visitor.visit(this)
 
         override fun toString() =
                 listOf(::executeCount, ::undoCount, ::cleanupCount)
@@ -321,7 +325,7 @@ internal class SerialCompositeCommandTest {
                         .joinToString()
     }
 
-    private inner class TestBehavior(private val executeResult: () -> Boolean?): Undoable.Behavior {
+    private inner class TestBehavior(private val executeResult: () -> Boolean?): Undoable.Behavior<Any> {
         internal var executeCount = 0
         internal var successCount = 0
         internal var abortCount = 0
@@ -339,11 +343,11 @@ internal class SerialCompositeCommandTest {
 
         override fun undoAction() = true.also { undoCount++ }
 
-        override fun resumeAction() = true.also { resumeCount++; successCount++ }
+        override fun resumeAction(r: Any?) = true.also { resumeCount++; successCount++ }
 
         override fun cleanupAction() { cleanupCount++ }
 
-        override fun accept(visitor: CommandVisitor) = visitor.visit(this)
+        override fun accept(visitor: CommandVisitor<Any>) = visitor.visit(this)
 
         override fun toString() =
                 listOf(::executeCount, ::successCount, ::abortCount, ::undoCount, ::suspendCount, ::resumeCount, ::cleanupCount)

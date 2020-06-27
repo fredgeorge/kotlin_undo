@@ -6,17 +6,17 @@
 
 package unit
 
-import command.CommandVisitor
 import command.StatefulCommand
 import command.Undoable
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
+import visitor.CommandVisitor
 import kotlin.test.assertFailsWith
 
 internal class StatefulCommandTest {
     private lateinit var behavior: TestBehavior
-    private lateinit var command: Undoable
+    private lateinit var command: Undoable<Any>
 
     @Test
     fun `undone command can be re-done`() {
@@ -83,13 +83,13 @@ internal class StatefulCommandTest {
         assertEquals(expectedSuspendCount, behavior.suspendCount)
     }
 
-    private inner class TestBehavior(private val executeResult: () -> Boolean?): Undoable.Behavior {
+    private inner class TestBehavior(private val executeResult: () -> Boolean?): Undoable.Behavior<Any> {
         internal var executeCount = 0
         internal var abortCount = 0
         internal var undoCount = 0
         internal var suspendCount = 0
 
-        internal fun command(): Undoable {
+        internal fun command(): Undoable<Any> {
             behavior = this
             return StatefulCommand(behavior)
         }
@@ -100,8 +100,8 @@ internal class StatefulCommandTest {
 
         override fun undoAction() = true.also { undoCount++ }
 
-        override fun resumeAction() = true.also { executeCount++ }
+        override fun resumeAction(r: Any?) = true.also { executeCount++ }
 
-        override fun accept(visitor: CommandVisitor) = visitor.visit(this)
+        override fun accept(visitor: CommandVisitor<Any>) = visitor.visit(this)
     }
 }

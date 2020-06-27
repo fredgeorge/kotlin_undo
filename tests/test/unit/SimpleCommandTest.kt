@@ -6,10 +6,10 @@
 
 package unit
 
-import command.CommandVisitor
 import command.Undoable
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
+import visitor.CommandVisitor
 
 internal class SimpleCommandTest {
     private lateinit var command: SimpleTestCommand
@@ -59,7 +59,7 @@ internal class SimpleCommandTest {
         assertEquals(expectedSuspendCount, command.suspendCount)
     }
 
-    private class SimpleTestCommand(private val executeAction: () -> Boolean?): Undoable {
+    private class SimpleTestCommand(private val executeAction: () -> Boolean?): Undoable<Any> {
         internal var executeCount = 0
         internal var abortCount = 0
         internal var undoCount = 0
@@ -72,15 +72,15 @@ internal class SimpleCommandTest {
         } ?: null.also{ suspendCount ++ }
 
         override fun undo(): Boolean {
-            undoCount += 1
+            undoCount++
             return true
         }
 
-        override fun resume(): Boolean? {
+        override fun resume(r: Any?): Boolean? {
             executeCount++
             return true
         }
 
-        override fun accept(visitor: CommandVisitor) {}     // Ignore
+        override fun accept(visitor: CommandVisitor<Any>) {}     // Ignore
     }
 }
