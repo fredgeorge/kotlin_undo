@@ -1,10 +1,10 @@
 # kotlin_undo
 
-Copyright (c) 2020 by Fred George 
-MIT License - see LICENSE file 
+Copyright (c) 2020 by Fred George  
+MIT License - see LICENSE file  
 @author Fred George  fredgeorge@acm.org 
 
-Sample Kotlin implementation of Macro pattern (Command + Composite) with undo capability.
+This is a sample Kotlin implementation of Macro pattern (Command + Composite) with undo capability.
 A Visitor is provided to walk the Command hierarchy, along with an exploitation of this
 Visitor pattern for pretty-printing the Command hierarchy. Also featured are use of a
 Null Object pattern and Decorator pattern.
