@@ -1,3 +1,9 @@
+/*
+ * Copyright (c) 2020 by Fred George
+ * MIT License - see LICENSE file
+ * @author Fred George  fredgeorge@acm.org
+ */
+
 package decorator
 
 import command.Undoable
@@ -44,6 +50,7 @@ class ActionTracer<R>(command: Undoable<R>): CommandVisitor<R> {
         }
 
         override fun accept(visitor: CommandVisitor<R>) {
+            visitor.visit(this)
             baseBehavior.accept(visitor)
         }
 
