@@ -6,15 +6,26 @@
 
 package command
 
+import command.Undoable.Status.*
 import visitor.CommandPrettyPrint
 import visitor.CommandVisitor
 
 class StatefulCommand<R> (
         private var behavior: Undoable.Behavior<R>,
-        override val identifier: Any = "<unidentified StatefulCommand>"
+        override val identifier: Any = "<unidentified StatefulCommand>",
+        status: Undoable.Status = Ready
 ): Undoable<R> {
 
-    private var state: ExecutionState = Ready()
+    private var state: ExecutionState
+
+    init {
+        state = when(status) {
+            Ready -> Ready()
+            Pending -> Suspended()
+            Complete -> Success()
+            Failure -> Failure()
+        }
+    }
 
     override fun execute() = state.execute { behavior.executeAction() }
 
@@ -23,9 +34,9 @@ class StatefulCommand<R> (
     override fun resume(r: R?) = state.resume { behavior.resumeAction(r) }
 
     override fun accept(visitor: CommandVisitor<R>) {
-        visitor.preVisit(this, behavior)
+        visitor.preVisit(this, behavior, state.status)
         behavior.accept(visitor)
-        visitor.postVisit(this, behavior)
+        visitor.postVisit(this, behavior, state.status)
     }
 
     override fun inject(behavior: Undoable.Behavior<R>) {
@@ -50,9 +61,11 @@ class StatefulCommand<R> (
         fun execute(sideEffect: () -> Boolean?): Boolean?
         fun undo(sideEffect: () -> Boolean): Boolean
         fun resume(sideEffect: () -> Boolean?): Boolean?
+        val status: Undoable.Status
     }
 
     private inner class Ready: ExecutionState {
+        override val status = Ready
 
         override fun execute(sideEffect: () -> Boolean?) = process(sideEffect)
 
@@ -64,6 +77,7 @@ class StatefulCommand<R> (
     }
 
     private inner class Success: ExecutionState {
+        override val status = Complete
 
         override fun execute(sideEffect: () -> Boolean?) = true  // Idempotent response
 
@@ -73,6 +87,7 @@ class StatefulCommand<R> (
     }
 
     private inner class Suspended: ExecutionState {
+        override val status = Pending
 
         override fun execute(sideEffect: () -> Boolean?) = resume(sideEffect)  // States can allow this to be re-interpreted as resume
 
@@ -82,6 +97,7 @@ class StatefulCommand<R> (
     }
 
     private inner class Failure: ExecutionState {
+        override val status = Failure
 
         override fun execute(sideEffect: () -> Boolean?): Boolean? {
             throw IllegalStateException("Command has already failed")

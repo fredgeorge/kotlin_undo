@@ -18,7 +18,11 @@ class ActionTracer<R>(command: Undoable<R>): CommandVisitor<R> {
         command.accept(this)
     }
 
-    override fun preVisit(command: Undoable<R>, behavior: Undoable.Behavior<R>?) {
+    override fun preVisit(
+            command: Undoable<R>,
+            behavior: Undoable.Behavior<R>?,
+            status: Undoable.Status
+    ) {
         behavior?.also { command.inject(Trace(command.identifier, behavior)) }
     }
 

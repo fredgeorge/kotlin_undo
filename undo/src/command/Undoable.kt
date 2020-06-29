@@ -31,5 +31,9 @@ interface Undoable<R> {
     }
 
     interface Trace<R>: Behavior<R>
+
+    enum class Status {
+        Ready, Pending, Complete, Failure
+    }
 }
 

@@ -10,23 +10,32 @@ import decorator.ActionTracer
 import visitor.CommandPrettyPrint
 import visitor.CommandVisitor
 
-class SerialCompositeCommand<R>(
-        vararg steps: Undoable<R>,
+class SerialCompositeCommand<R> private constructor(
+        private val steps: MutableList<Undoable<R>>,
         private var behavior: Undoable.Behavior<R>,
-        override val identifier: Any = "<unidentified SerialCompositeCommand>"
-): Undoable.Composite<R> {
-    private val steps: MutableList<Undoable<R>>
-    private var currentStep: Undoable<R>
-    private val nextSteps: Map<Undoable<R>, Undoable<R>>
-    private val previousSteps: Map<Undoable<R>, Undoable<R>>
+        override val identifier: Any = "<unidentified SerialCompositeCommand>",
+        private var currentStep: Undoable<R> = steps.firstOrNull() ?: NullStep<R>()
+) : Undoable.Composite<R> {
+
+    private var nextSteps: Map<Undoable<R>, Undoable<R>> = emptyMap()
+    private var previousSteps: Map<Undoable<R>, Undoable<R>> = emptyMap()
     private val nullStep = NullStep<R>()
 
     init {
-        this.steps = if (steps.isEmpty()) mutableListOf(nullStep) else steps.toMutableList()
+        if (steps.isEmpty()) steps.add(nullStep)
         currentStep = this.steps.firstOrNull() ?: nullStep
-        nextSteps = this.steps.zipWithNext().toMap()  // pseudo linked list for execution
-        previousSteps = this.steps.reversed().zipWithNext().toMap() // pseudo linked list for undo
+        generateLinkages()
     }
+
+    constructor(
+            vararg steps: Undoable<R>,
+            behavior: Undoable.Behavior<R>,
+            identifier: Any = "<unidentified SerialCompositeCommand>"
+    ) : this(
+            steps.toMutableList(),
+            behavior,
+            identifier
+    )
 
     override fun execute(): Boolean? {
         behavior.executeAction().also { result -> if (result != true) return result } // Abort early
@@ -60,11 +69,22 @@ class SerialCompositeCommand<R>(
         this.behavior = behavior
     }
 
-    override fun add(step: Undoable<R>) = steps.add(step)
+    override fun add(step: Undoable<R>) = steps.add(step).also {
+        generateLinkages()
+    }
 
-    override fun add(index: Int, step: Undoable<R>) = steps.add(index, step)
+    override fun add(index: Int, step: Undoable<R>) = steps.add(index, step).also {
+        generateLinkages()
+    }
 
-    override fun remove(step: Undoable<R>) = steps.remove(step)
+    override fun remove(step: Undoable<R>) = steps.remove(step).also {
+        generateLinkages()
+    }
+
+    private fun generateLinkages() {
+        nextSteps = this.steps.zipWithNext().toMap()  // pseudo linked list for execution
+        previousSteps = this.steps.reversed().zipWithNext().toMap() // pseudo linked list for undo
+    }
 
     override fun toString() = CommandPrettyPrint(this).result()
 
@@ -73,7 +93,7 @@ class SerialCompositeCommand<R>(
     // Recursive execution
     private fun executeCurrentStep(): Boolean? {
         currentStep.execute().also { executeResult ->
-            return when(executeResult) {
+            return when (executeResult) {
                 true -> if (isLastStep()) true else executeCurrentStep()
                 false -> rollback()
                 else -> null  // it's suspended at the currentStep
@@ -110,7 +130,7 @@ class SerialCompositeCommand<R>(
         }
     }
 
-    private class NullStep<R>: Undoable<R> {
+    private class NullStep<R> : Undoable<R> {
         override fun execute() = true
         override fun undo() = true
         override fun resume(r: R?) = true

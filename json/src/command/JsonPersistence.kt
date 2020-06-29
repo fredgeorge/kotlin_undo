@@ -58,16 +58,25 @@ class JsonPersistence<R>(command: Undoable<R>) : CommandVisitor<R> {
         commandObjectNodes.removeAt(0)
     }
 
-    override fun preVisit(command: Undoable<R>, behavior: Undoable.Behavior<R>?) {
+    override fun preVisit(
+            command: Undoable<R>,
+            behavior: Undoable.Behavior<R>?,
+            status: Undoable.Status
+    ) {
         mapper.createObjectNode().also { currentLeaf ->
             currentLeaf.put("identifier", command.identifier.toString())
+            currentLeaf.put("status", status.name)
             behaviorNodes = mapper.createArrayNode()
             arrayNodes.first().add(currentLeaf)
             commandObjectNodes.add(0, currentLeaf)
         }
     }
 
-    override fun postVisit(command: Undoable<R>, behavior: Undoable.Behavior<R>?) {
+    override fun postVisit(
+            command: Undoable<R>,
+            behavior: Undoable.Behavior<R>?,
+            status: Undoable.Status
+    ) {
         commandObjectNodes.first().set("behaviors", behaviorNodes)
         commandObjectNodes.removeAt(0)
     }
