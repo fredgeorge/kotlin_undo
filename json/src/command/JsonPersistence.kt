@@ -32,11 +32,13 @@ class JsonPersistence<R>(command: Undoable<R>) : CommandVisitor<R> {
             command: Undoable.Composite<R>,
             steps: List<Undoable<R>>,
             currentStep: Undoable<R>,
-            behavior: Undoable.Behavior<R>?
+            behavior: Undoable.Behavior<R>?,
+            status: Undoable.Status
     ) {
         mapper.createObjectNode().also { currentComposite ->
             currentComposite.put("identifier", command.identifier.toString())
             currentComposite.put("kclass", command.javaClass.simpleName)
+            currentComposite.put("status", command.status().name)
             behaviorNodes = mapper.createArrayNode()
             arrayNodes.first().add(currentComposite)
             commandObjectNodes.add(0, currentComposite)
@@ -48,7 +50,8 @@ class JsonPersistence<R>(command: Undoable<R>) : CommandVisitor<R> {
             command: Undoable.Composite<R>,
             steps: List<Undoable<R>>,
             currentStep: Undoable<R>,
-            behavior: Undoable.Behavior<R>?
+            behavior: Undoable.Behavior<R>?,
+            status: Undoable.Status
     ) {
         commandObjectNodes.first().also { currentComposite ->
             currentComposite.set("behaviors", behaviorNodes)

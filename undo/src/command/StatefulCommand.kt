@@ -33,6 +33,8 @@ class StatefulCommand<R> (
 
     override fun resume(r: R?) = state.resume { behavior.resumeAction(r) }
 
+    override fun status() = state.status
+
     override fun accept(visitor: CommandVisitor<R>) {
         visitor.preVisit(this, behavior, state.status)
         behavior.accept(visitor)

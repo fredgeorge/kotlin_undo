@@ -12,6 +12,7 @@ interface Undoable<R> {
     fun execute(): Boolean?
     fun undo(): Boolean
     fun resume(r: R? = null): Boolean?
+    fun status(): Status
     fun accept(visitor: CommandVisitor<R>)
     fun inject(behavior: Behavior<R>) {}   // Ignore by default
     val identifier: Any  // Used for debugging

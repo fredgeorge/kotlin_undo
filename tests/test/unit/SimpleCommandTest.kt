@@ -7,6 +7,7 @@
 package unit
 
 import command.Undoable
+import command.Undoable.Status.Complete
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 import visitor.CommandVisitor
@@ -80,6 +81,8 @@ internal class SimpleCommandTest {
             executeCount++
             return true
         }
+
+        override fun status() = Complete
 
         override fun accept(visitor: CommandVisitor<Any>) {}     // Ignore
     }

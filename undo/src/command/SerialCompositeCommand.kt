@@ -6,6 +6,7 @@
 
 package command
 
+import command.Undoable.Status.*
 import decorator.ActionTracer
 import visitor.CommandPrettyPrint
 import visitor.CommandVisitor
@@ -58,11 +59,20 @@ class SerialCompositeCommand<R> private constructor(
         }
     }
 
+    override fun status(): Undoable.Status {
+        steps.map { it.status() }.let { statuses ->
+            if (statuses.all { it == Ready }) return Ready
+            if (statuses.any { it == Failure}) return Failure
+            if (statuses.any { it == Pending}) return Pending
+            return Complete
+        }
+    }
+
     override fun accept(visitor: CommandVisitor<R>) {
-        visitor.preVisit(this, steps, currentStep, behavior)
+        visitor.preVisit(this, steps, currentStep, behavior, status())
         behavior.accept(visitor)
         steps.filterNot { it is NullStep }.forEach { it.accept(visitor) }
-        visitor.postVisit(this, steps, currentStep, behavior)
+        visitor.postVisit(this, steps, currentStep, behavior, status())
     }
 
     override fun inject(behavior: Undoable.Behavior<R>) {
@@ -134,6 +144,7 @@ class SerialCompositeCommand<R> private constructor(
         override fun execute() = true
         override fun undo() = true
         override fun resume(r: R?) = true
+        override fun status() = Complete
         override fun accept(visitor: CommandVisitor<R>) {} // Ignore
         override val identifier = "<no steps>"
     }

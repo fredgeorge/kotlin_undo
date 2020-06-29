@@ -19,10 +19,24 @@ class ActionTracer<R>(command: Undoable<R>): CommandVisitor<R> {
     }
 
     override fun preVisit(
+            command: Undoable.Composite<R>,
+            steps: List<Undoable<R>>,
+            currentStep: Undoable<R>,
+            behavior: Undoable.Behavior<R>?,
+            status: Undoable.Status
+    ) {
+        injectTracer(command, behavior)
+    }
+
+    override fun preVisit(
             command: Undoable<R>,
             behavior: Undoable.Behavior<R>?,
             status: Undoable.Status
     ) {
+        injectTracer(command, behavior)
+    }
+
+    private fun injectTracer(command: Undoable<R>, behavior: Undoable.Behavior<R>?) {
         behavior?.also { command.inject(Trace(command.identifier, behavior)) }
     }
 
@@ -32,6 +46,8 @@ class ActionTracer<R>(command: Undoable<R>): CommandVisitor<R> {
             private val indentifier: Any,
             private val baseBehavior: Undoable.Behavior<R>
     ): Undoable.Trace<R> {
+
+        private var actionCount = 0
 
         override fun executeAction(): Boolean? {
             log0(::executeAction)
@@ -58,11 +74,15 @@ class ActionTracer<R>(command: Undoable<R>): CommandVisitor<R> {
             baseBehavior.accept(visitor)
         }
 
+        override fun toString() = "actions traced: $actionCount"
+
         private fun log0(kFunction0: KFunction0<Any?>) {
+            actionCount++
             result += "${kFunction0.name} invoked for ${indentifier.toString()}\n"
         }
 
         private fun log1(kFunction1: KFunction1<R?, Boolean?>) {
+            actionCount++
             result += "${kFunction1.name} invoked for ${indentifier.toString()}\n"
         }
     }

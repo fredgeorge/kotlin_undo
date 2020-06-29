@@ -13,7 +13,8 @@ interface CommandVisitor<R> {
             command: Undoable.Composite<R>,
             steps: List<Undoable<R>>,
             currentStep: Undoable<R>,
-            behavior: Undoable.Behavior<R>? = null
+            behavior: Undoable.Behavior<R>? = null,
+            status: Undoable.Status
     ) {}
     fun preVisit(
             command: Undoable<R>,
@@ -30,6 +31,7 @@ interface CommandVisitor<R> {
             command: Undoable.Composite<R>,
             steps: List<Undoable<R>>,
             currentStep: Undoable<R>,
-            behavior: Undoable.Behavior<R>? = null
+            behavior: Undoable.Behavior<R>? = null,
+            status: Undoable.Status
     ) {}
 }
