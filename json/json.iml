@@ -10,7 +10,7 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="KotlinJavaRuntime (4)" level="project" />
     <orderEntry type="module" module-name="undo" />
-    <orderEntry type="library" name="org.junit.jupiter:junit-jupiter-api:5.0.0-M4" level="project" />
     <orderEntry type="library" name="com.fasterxml.jackson.module:jackson-module-kotlin:2.5.3" level="project" />
+    <orderEntry type="library" name="org.junit.jupiter:junit-jupiter-api:5.6.0-M1" level="project" />
   </component>
 </module>

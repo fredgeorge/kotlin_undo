@@ -11,6 +11,8 @@ import visitor.CommandVisitor
 import kotlin.reflect.KFunction0
 import kotlin.reflect.KFunction1
 
+// Understands all the Behaviors invoked for a Command hierarchy
+// Visitor pattern [GoF] used to inject an intercepting Behavior
 class ActionTracer<R>(command: Undoable<R>): CommandVisitor<R> {
     private var result = ""
 
@@ -21,8 +23,8 @@ class ActionTracer<R>(command: Undoable<R>): CommandVisitor<R> {
     override fun preVisit(
             command: Undoable.Composite<R>,
             steps: List<Undoable<R>>,
-            currentStep: Undoable<R>,
-            behavior: Undoable.Behavior<R>?,
+            currentStep: Undoable<R>?,
+            behavior: Undoable.Behavior<R>,
             status: Undoable.Status
     ) {
         injectTracer(command, behavior)
@@ -30,18 +32,20 @@ class ActionTracer<R>(command: Undoable<R>): CommandVisitor<R> {
 
     override fun preVisit(
             command: Undoable<R>,
-            behavior: Undoable.Behavior<R>?,
+            behavior: Undoable.Behavior<R>,
             status: Undoable.Status
     ) {
         injectTracer(command, behavior)
     }
 
-    private fun injectTracer(command: Undoable<R>, behavior: Undoable.Behavior<R>?) {
-        behavior?.also { command.inject(Trace(command.identifier, behavior)) }
+    private fun injectTracer(command: Undoable<R>, behavior: Undoable.Behavior<R>) {
+        command.inject(Trace(command.identifier, behavior))
     }
 
     fun result() = result
 
+    // Tracks the invocation of a single Behavior
+    // Decorator pattern [GoF] used to intercept, then relay, all Behavior APIs
     inner class Trace<R>(
             private val indentifier: Any,
             private val baseBehavior: Undoable.Behavior<R>
@@ -76,14 +80,13 @@ class ActionTracer<R>(command: Undoable<R>): CommandVisitor<R> {
 
         override fun toString() = "actions traced: $actionCount"
 
-        private fun log0(kFunction0: KFunction0<Any?>) {
-            actionCount++
-            result += "${kFunction0.name} invoked for ${indentifier.toString()}\n"
-        }
+        private fun log0(kFunction0: KFunction0<Any?>) = log(kFunction0.name)
 
-        private fun log1(kFunction1: KFunction1<R?, Boolean?>) {
+        private fun log1(kFunction1: KFunction1<R?, Boolean?>) = log(kFunction1.name)
+
+        private fun log(actionName: String) {
             actionCount++
-            result += "${kFunction1.name} invoked for ${indentifier.toString()}\n"
+            result += "$actionName invoked for ${indentifier.toString()}\n"
         }
     }
 }

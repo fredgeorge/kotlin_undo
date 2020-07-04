@@ -323,8 +323,7 @@ internal class SerialCompositeCommandTest {
         override fun toString() =
                 listOf(::executeCount, ::undoCount, ::cleanupCount)
                         .filterNot { it.get() == 0 }
-                        .map { "${it.name} = ${it.get()}" }
-                        .joinToString()
+                        .joinToString { "${it.name} = ${it.get()}" }
     }
 
     private inner class TestBehavior(private val executeResult: () -> Boolean?): Undoable.Behavior<Any> {
@@ -351,18 +350,16 @@ internal class SerialCompositeCommandTest {
 
         override fun accept(visitor: CommandVisitor<Any>) = visitor.visit(this)
 
-        override fun toString() =
-                listOf(
-                        ::executeCount,
-                        ::successCount,
-                        ::abortCount,
-                        ::undoCount,
-                        ::suspendCount,
-                        ::resumeCount,
-                        ::cleanupCount
-                )
-                        .filterNot { it.get() == 0 }
-                        .map { "${it.name} = ${it.get()}" }
-                        .joinToString()
+        override fun toString() = listOf(
+                ::executeCount,
+                ::successCount,
+                ::abortCount,
+                ::undoCount,
+                ::suspendCount,
+                ::resumeCount,
+                ::cleanupCount
+        )
+                .filterNot { it.get() == 0 }
+                .joinToString { "${it.name} = ${it.get()}" }
     }
 }

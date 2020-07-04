@@ -10,6 +10,9 @@ import command.Undoable.Status.*
 import visitor.CommandPrettyPrint
 import visitor.CommandVisitor
 
+// Understands a leaf Command that enforces logical API sequences
+// Implements the leaf of a Command pattern [GoF]
+// State pattern [GoF] used to enforce sequences
 class StatefulCommand<R> (
         private var behavior: Undoable.Behavior<R>,
         override val identifier: Any = "<unidentified StatefulCommand>",
@@ -41,24 +44,29 @@ class StatefulCommand<R> (
         visitor.postVisit(this, behavior, state.status)
     }
 
+    // Replace the current Behavior
     override fun inject(behavior: Undoable.Behavior<R>) {
         this.behavior = behavior
     }
 
     override fun toString() = CommandPrettyPrint(this).result()
 
+    // Execute the appropriate Behavior action, and change states accordingly
     private fun process(sideEffect: () -> Boolean?) = sideEffect()?.also { result ->
         state = if (result) Success() else Failure()
         behavior.cleanupAction()
     } ?: null.also {
-        state = Suspended()
+        state = Suspended()  // cleanupAction **not** invoked on suspension
     }
 
+    // Execute the undo Behavior action, and change states accordingly
     private fun reverse(sideEffect: () -> Boolean) = sideEffect().also { result ->
         state = if (result) Ready() else Failure()
         behavior.cleanupAction()
     }
 
+    // Understands valid APIs sent to particular States
+    // SideEffect invokes the appropriate Behavior API
     private interface ExecutionState {
         fun execute(sideEffect: () -> Boolean?): Boolean?
         fun undo(sideEffect: () -> Boolean): Boolean
@@ -66,6 +74,7 @@ class StatefulCommand<R> (
         val status: Undoable.Status
     }
 
+    // Understands valid and invalid actions when Command has not been executed yet
     private inner class Ready: ExecutionState {
         override val status = Ready
 
@@ -78,26 +87,29 @@ class StatefulCommand<R> (
         }
     }
 
+    // Understands the successful completion of a Command
     private inner class Success: ExecutionState {
         override val status = Complete
 
         override fun execute(sideEffect: () -> Boolean?) = true  // Idempotent response
 
-        override fun undo(sideEffect: () -> Boolean) = reverse(sideEffect)
+        override fun undo(sideEffect: () -> Boolean) = reverse(sideEffect)  // Try to go back to Ready
 
         override fun resume(sideEffect: () -> Boolean?) = true  // Idempotent response, and would support chaining of resume()
     }
 
+    // Understands an interrupted Command that awaits resumption
     private inner class Suspended: ExecutionState {
         override val status = Pending
 
         override fun execute(sideEffect: () -> Boolean?) = resume(sideEffect)  // States can allow this to be re-interpreted as resume
 
-        override fun undo(sideEffect: () -> Boolean) = reverse(sideEffect)
+        override fun undo(sideEffect: () -> Boolean) = reverse(sideEffect) // Abort, and try to go back to Ready
 
-        override fun resume(sideEffect: () -> Boolean?) = process(sideEffect)
+        override fun resume(sideEffect: () -> Boolean?) = process(sideEffect)  // Expected behavior
     }
 
+    // Understands a Command that did not complete successfully, but cannot be undone successfully
     private inner class Failure: ExecutionState {
         override val status = Failure
 

@@ -31,8 +31,8 @@ class JsonPersistence<R>(command: Undoable<R>) : CommandVisitor<R> {
     override fun preVisit(
             command: Undoable.Composite<R>,
             steps: List<Undoable<R>>,
-            currentStep: Undoable<R>,
-            behavior: Undoable.Behavior<R>?,
+            currentStep: Undoable<R>?,
+            behavior: Undoable.Behavior<R>,
             status: Undoable.Status
     ) {
         mapper.createObjectNode().also { currentComposite ->
@@ -49,8 +49,8 @@ class JsonPersistence<R>(command: Undoable<R>) : CommandVisitor<R> {
     override fun postVisit(
             command: Undoable.Composite<R>,
             steps: List<Undoable<R>>,
-            currentStep: Undoable<R>,
-            behavior: Undoable.Behavior<R>?,
+            currentStep: Undoable<R>?,
+            behavior: Undoable.Behavior<R>,
             status: Undoable.Status
     ) {
         commandObjectNodes.first().also { currentComposite ->
@@ -63,7 +63,7 @@ class JsonPersistence<R>(command: Undoable<R>) : CommandVisitor<R> {
 
     override fun preVisit(
             command: Undoable<R>,
-            behavior: Undoable.Behavior<R>?,
+            behavior: Undoable.Behavior<R>,
             status: Undoable.Status
     ) {
         mapper.createObjectNode().also { currentLeaf ->
@@ -77,7 +77,7 @@ class JsonPersistence<R>(command: Undoable<R>) : CommandVisitor<R> {
 
     override fun postVisit(
             command: Undoable<R>,
-            behavior: Undoable.Behavior<R>?,
+            behavior: Undoable.Behavior<R>,
             status: Undoable.Status
     ) {
         commandObjectNodes.first().set("behaviors", behaviorNodes)

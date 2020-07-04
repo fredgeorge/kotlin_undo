@@ -8,6 +8,8 @@ package visitor
 
 import command.Undoable
 
+// Understands text rendering of a Command hierarchy
+// Exploits the Visitor pattern [GoF] to walk hierarchy
 internal class CommandPrettyPrint<R>(command: Undoable<R>): CommandVisitor<R> {
     private var result = ""
     private var indentCount = 0
@@ -20,8 +22,8 @@ internal class CommandPrettyPrint<R>(command: Undoable<R>): CommandVisitor<R> {
     override fun preVisit(
             command: Undoable.Composite<R>,
             steps: List<Undoable<R>>,
-            currentStep: Undoable<R>,
-            behavior: Undoable.Behavior<R>?,
+            currentStep: Undoable<R>?,
+            behavior: Undoable.Behavior<R>,
             status: Undoable.Status
     ) {
         result += "  ".repeat(indentCount) +
@@ -31,7 +33,7 @@ internal class CommandPrettyPrint<R>(command: Undoable<R>): CommandVisitor<R> {
 
     override fun preVisit(
             command: Undoable<R>,
-            behavior: Undoable.Behavior<R>?,
+            behavior: Undoable.Behavior<R>,
             status: Undoable.Status
     ) {
         result += "  ".repeat(indentCount) + command.identifier.toString() + "\n"
@@ -44,7 +46,7 @@ internal class CommandPrettyPrint<R>(command: Undoable<R>): CommandVisitor<R> {
 
     override fun postVisit(
             command: Undoable<R>,
-            behavior: Undoable.Behavior<R>?,
+            behavior: Undoable.Behavior<R>,
             status: Undoable.Status
     ) {
         indentCount--
@@ -53,8 +55,8 @@ internal class CommandPrettyPrint<R>(command: Undoable<R>): CommandVisitor<R> {
     override fun postVisit(
             command: Undoable.Composite<R>,
             steps: List<Undoable<R>>,
-            currentStep: Undoable<R>,
-            behavior: Undoable.Behavior<R>?,
+            currentStep: Undoable<R>?,
+            behavior: Undoable.Behavior<R>,
             status: Undoable.Status
     ) {
         indentCount--

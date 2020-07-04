@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Test
 import visitor.CommandVisitor
 import kotlin.test.assertFailsWith
 
+// Ensures state behavior of StatefulCommand operates appropriately
 internal class StatefulCommandTest {
     private lateinit var behavior: TestBehavior
     private lateinit var command: Undoable<Any>
@@ -83,12 +84,14 @@ internal class StatefulCommandTest {
         assertEquals(expectedSuspendCount, behavior.suspendCount)
     }
 
+    // Count various invocations of APIs and their results (success, failure, suspension)
     private inner class TestBehavior(private val executeResult: () -> Boolean?): Undoable.Behavior<Any> {
         internal var executeCount = 0
         internal var abortCount = 0
         internal var undoCount = 0
         internal var suspendCount = 0
 
+        // Wrap this Behavior in a StatefulCommand
         internal fun command(): Undoable<Any> {
             behavior = this
             return StatefulCommand(behavior)
@@ -100,6 +103,7 @@ internal class StatefulCommandTest {
 
         override fun undoAction() = true.also { undoCount++ }
 
+        // Behavior can be resumed
         override fun resumeAction(r: Any?) = true.also { executeCount++ }
 
         override fun accept(visitor: CommandVisitor<Any>) = visitor.visit(this)
